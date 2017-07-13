@@ -1,0 +1,36 @@
+param (
+	[string]$vmid = $(throw "-vmid is required.")
+)
+
+function ExitWithCode 
+{ 
+    param 
+    ( 
+        $exitcode 
+    )
+
+    #$host.SetShouldExit($exitcode) 
+    exit $exitcode
+}
+
+$vmobj = $null
+try{
+	$vmobj = Get-VM -Id $vmid -EA SilentlyContinue
+}
+catch {
+	Write-Host $('ERROR: '+$Error[0].Exception.Message)
+	ExitWithCode -exitcode 3
+}
+
+if (-not $vmobj) {
+	Write-Host "UNKNOWN: Container object not found or insufficient permissions to query."
+	ExitWithCode -exitcode 3
+}
+
+if ($vmobj.State -contains 'Running') {
+	Write-Host $('UP: Running on '+${env:computername}+' (Uptime: '+$vmobj.Uptime+')')
+	ExitWithCode -exitcode 0
+}
+
+Write-Host $($vmobj.State + ' on ' + ${env:computername})
+ExitWithCode -exitcode 2
